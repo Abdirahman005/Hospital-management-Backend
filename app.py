@@ -1,16 +1,17 @@
-# app.py
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import time
 from werkzeug.security import generate_password_hash, check_password_hash
+import os  # <-- added
 
 # ================= FLASK APP =================
 app = Flask(__name__)
 CORS(app)
 
 # ================= DATABASE CONFIG =================
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://hospital_user:password123@localhost/hospital_db'
+# Use environment variable DATABASE_URL (set on Render)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
