@@ -1,18 +1,32 @@
+# ================= LOAD ENVIRONMENT VARIABLES =================
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+# Force loading .env from the same directory as this file (for local development)
+dotenv_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path)
+
+# ================= DATABASE CONFIG =================
+# Check if Render internal DB URL exists (set in Render dashboard)
+# If not, fallback to local .env DATABASE_URL
+database_url = os.environ.get("RENDER_DATABASE_URL") or os.environ.get("DATABASE_URL")
+
+if not database_url:
+    raise RuntimeError("DATABASE_URL is not set. Please set DATABASE_URL in .env or RENDER_DATABASE_URL on Render.")
+
+# ================= FLASK APP =================
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import time
 from werkzeug.security import generate_password_hash, check_password_hash
-import os  # <-- added
 
-# ================= FLASK APP =================
 app = Flask(__name__)
 CORS(app)
 
-# ================= DATABASE CONFIG =================
-# Use environment variable DATABASE_URL (set on Render)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # ================= MODELS =================
@@ -40,7 +54,7 @@ class Appointment(db.Model):
 with app.app_context():
     db.create_all()
 
-# ================= AUTH ROUTES =================
+# ================= ROUTES =================
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -60,7 +74,6 @@ def login():
         return jsonify({"message": "Login successful"})
     return jsonify({"message": "Invalid credentials"}), 401
 
-# ================= DOCTOR ROUTES =================
 @app.route('/doctors', methods=['GET'])
 def get_doctors():
     doctors = Doctor.query.all()
@@ -109,7 +122,6 @@ def delete_doctor(id):
     db.session.commit()
     return jsonify({"message": "Doctor deleted successfully"})
 
-# ================= APPOINTMENT ROUTES =================
 @app.route('/appointments', methods=['GET'])
 def get_appointments():
     appointments = Appointment.query.all()
